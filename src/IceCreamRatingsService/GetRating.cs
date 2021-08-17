@@ -27,7 +27,7 @@ namespace IceCreamRatingsService
 
             if (rating.Count() == 0)
             {
-                return new BadRequestObjectResult("Invalid request");
+                return new NotFoundResult();
             }
             else
             {
