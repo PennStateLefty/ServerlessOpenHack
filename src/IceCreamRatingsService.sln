@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31409.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceCreamRatingsService", "IceCreamRatingsService\IceCreamRatingsService.csproj", "{0839FC6A-A032-4B62-8A0D-526613A43E80}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0839FC6A-A032-4B62-8A0D-526613A43E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0839FC6A-A032-4B62-8A0D-526613A43E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0839FC6A-A032-4B62-8A0D-526613A43E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0839FC6A-A032-4B62-8A0D-526613A43E80}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {70A8C3A5-EC2C-4603-9B12-9CEAEF7EF0E7}
+	EndGlobalSection
+EndGlobal
