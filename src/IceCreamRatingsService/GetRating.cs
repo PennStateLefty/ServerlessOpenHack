@@ -14,7 +14,7 @@ namespace IceCreamRatingsService
     {
         [FunctionName("GetRating")]
         public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "rating/{id}")] HttpRequest req, string id,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "rating/{id}")] HttpRequest req, string id,
             [CosmosDB(
                 databaseName: "IceCreamRatings",
                 collectionName: "Ratings",
