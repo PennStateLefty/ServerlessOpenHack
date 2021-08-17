@@ -1,14 +1,16 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using IceCreamRatingsService.Models;
+using Microsoft.Azure.Documents.Client;
+using System;
+using Microsoft.Azure.Documents.Linq;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace IceCreamRatingsService
 {
@@ -16,32 +18,24 @@ namespace IceCreamRatingsService
     {
         [FunctionName("GetRating")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "rating/{id}")] HttpRequest req, string id,
             [CosmosDB(
                 databaseName: "IceCreamRatings",
                 collectionName: "Ratings",
                 ConnectionStringSetting = "CosmosDBConnection",
-                Id = "{Query.id}",
-                PartitionKey = "Query.partitionKey")]Rating rating,
+                SqlQuery = "SELECT * FROM Ratings r where  r.id = {id}")]
+                IEnumerable<Rating> rating,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation($"C# HTTP trigger function processed a request for rating id: { id }");
 
-            string ratingId = req.Query["ratingId"];
-
-            // input binding removes the need for this?
-            //string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            //dynamic data = JsonConvert.DeserializeObject(requestBody);
-            //ratingId = ratingId ?? data?.ratingId;
-            //Rating rating = new Rating();
-
-            if (rating == null)
+            if (rating.Count() == 0)
             {
-                return new NotFoundObjectResult("rating not found");
+                return new BadRequestObjectResult("Invalid request");
             }
             else
             {
-                return new OkObjectResult(rating);
+                return new OkObjectResult(rating.First());
             }
         }
     }
