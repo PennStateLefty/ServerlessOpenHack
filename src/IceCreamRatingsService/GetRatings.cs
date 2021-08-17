@@ -17,6 +17,12 @@ namespace IceCreamRatingsService
         [FunctionName("GetRatings")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [CosmosDB(
+                databaseName: "IceCreamRatings",
+                collectionName: "Ratings",
+                ConnectionStringSetting = "CosmosDBConnection",
+                SqlQuery = "SELECT * FROM c where <userId ==> order by c._ts desc")]
+                IEnumerable<Rating> ratings,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
@@ -27,7 +33,7 @@ namespace IceCreamRatingsService
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             userId = userId ?? data?.userId;
 
-            List<Rating> ratings = new List<Rating>();
+            
 
 
             return new OkObjectResult(ratings);
