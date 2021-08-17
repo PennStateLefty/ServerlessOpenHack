@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -12,7 +13,7 @@ namespace IceCreamRatingsService.Models
         public Guid UserId { get; set; }
         public Guid ProductId { get; set; }
         public string LocationName { get; set; }
-        [JsonPropertyName("Rating")]
+        [JsonProperty("rating")]
         public int RatingValue { get; set; }
         public string UserNotes { get; set; }
     }
