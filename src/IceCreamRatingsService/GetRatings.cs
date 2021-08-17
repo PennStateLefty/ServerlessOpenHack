@@ -5,6 +5,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -16,27 +17,25 @@ namespace IceCreamRatingsService
     {
         [FunctionName("GetRatings")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "ratings/{userId}")] HttpRequest req, string userId,
             [CosmosDB(
                 databaseName: "IceCreamRatings",
                 collectionName: "Ratings",
                 ConnectionStringSetting = "CosmosDBConnection",
-                SqlQuery = "SELECT * FROM c where <userId ==> order by c._ts desc")]
+                SqlQuery = "SELECT * FROM Ratings r where  r.UserId = {userId}")]
                 IEnumerable<Rating> ratings,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation($"C# HTTP trigger function processed a request for UserID: { userId }");
 
-            string userId = req.Query["userId"];
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            userId = userId ?? data?.userId;
-
-            
-
-
-            return new OkObjectResult(ratings);
+            if (ratings.Count() == 0)
+			{
+                return new BadRequestObjectResult("Invalid request");
+            }
+            else
+			{
+                return new OkObjectResult(ratings);
+            }
         }
     }
 }
