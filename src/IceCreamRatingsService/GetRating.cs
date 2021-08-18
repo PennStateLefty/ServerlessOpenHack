@@ -33,7 +33,7 @@ namespace IceCreamRatingsService
             log.LogInformation($"C# HTTP trigger function processed a request for rating id: { id }");
 
             if (!Guid.TryParse(id, out Guid ratingId))
-			{
+            {
                 return new BadRequestObjectResult("Invalid Rating ID format");
             }
 
