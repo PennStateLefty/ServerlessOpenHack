@@ -52,7 +52,7 @@ namespace IceCreamRatingsService
     }
 
     /// <summary>
-    /// Represents and Azure function that gets a rating by it's unique id.
+    /// Represents an Azure function that gets a rating by it's unique id using a CosmosDB id binding.
     /// Note the partition key setting since /id makes sense, but doesn't work.
     /// </summary>
     public static class GetRatingWithId
@@ -85,7 +85,7 @@ namespace IceCreamRatingsService
     }
 
     /// <summary>
-    /// Represents an Azure Function that gets a rating by it's id with CosmosDB DocumentClient.
+    /// Represents an Azure Function that gets a rating by it's unique id using a CosmosDB document query.
     /// </summary>
     public static class GetRatingWithDocumentClient
     {
