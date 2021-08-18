@@ -1,0 +1,3 @@
+ponumber,datetime,locationid,locationname,locationaddress,locationpostcode,totalcost,totaltax
+ZTR192,7/27/2021 12:59:28 AM,AAA111,Contoso Suites,123 Wholesale Road,98112,74.85,7.485
+KDI702,7/20/2021 6:30:06 AM,BBB222,Northwind Traders,456 Foodcenter Lane,98101,239.85,23.985

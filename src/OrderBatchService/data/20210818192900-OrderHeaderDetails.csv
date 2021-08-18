@@ -1,0 +1,4 @@
+ponumber,datetime,locationid,locationname,locationaddress,locationpostcode,totalcost,totaltax
+LXQ276,7/30/2021 5:13:52 PM,CCC333,VanArsdel Ltd.,789 FE Road,98052,84.85,8.485
+UJA330,8/11/2021 9:33:44 AM,CCC333,VanArsdel Ltd.,789 FE Road,98052,94.8,9.48
+EFF799,8/7/2021 2:45:59 AM,CCC333,VanArsdel Ltd.,789 FE Road,98052,114.75,11.475

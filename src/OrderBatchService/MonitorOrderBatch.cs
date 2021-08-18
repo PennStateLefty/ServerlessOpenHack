@@ -1,5 +1,7 @@
+using Azure.Messaging;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -16,12 +18,11 @@ namespace OrderBatchService
         {
             var outputs = new List<string>();
 
-            // Replace "hello" with the name of your Durable Activity Function.
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "Tokyo"));
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "Seattle"));
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "London"));
 
-            //string applicationId = context.GetInput<string>();
+            string applicationId = context.GetInput<string>();
 
             //var gate1 = context.WaitForExternalEvent("CityPlanningApproval");
             //var gate2 = context.WaitForExternalEvent("FireDeptApproval");
@@ -55,6 +56,15 @@ namespace OrderBatchService
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
 
             return starter.CreateCheckStatusResponse(req, instanceId);
+        }
+
+        [FunctionName("MonitorOrderBatch_EventGridStart")]
+        public static void EventGridStart(
+            [EventGridTrigger] CloudEvent e,
+            [DurableClient] IDurableOrchestrationClient starter,
+            ILogger log)
+        {
+            log.LogInformation("Event received {type} {subject}", e.Type, e.Subject);
         }
     }
 }
