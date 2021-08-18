@@ -4,6 +4,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -28,9 +29,16 @@ namespace IceCreamRatingsService
         {
             log.LogInformation($"C# HTTP trigger function processed a request for UserID: { userId }");
 
+            Guid userGuid;
+
+            if (!Guid.TryParse(userId, out userGuid))
+			{
+                return new BadRequestObjectResult("Invalid user ID format");
+			}
+
             if (ratings.Count() == 0)
 			{
-                return new BadRequestObjectResult("Invalid request");
+                return new NotFoundObjectResult("Records not found");
             }
             else
 			{

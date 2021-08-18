@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,9 +26,16 @@ namespace IceCreamRatingsService
         {
             log.LogInformation($"C# HTTP trigger function processed a request for rating id: { id }");
 
+            Guid ratingId;
+
+            if (!Guid.TryParse(id, out ratingId))
+			{
+                return new BadRequestObjectResult("Invalid Rating ID format");
+            }
+
             if (rating.Count() == 0)
             {
-                return new NotFoundResult();
+                return new NotFoundObjectResult("Records not found");
             }
             else
             {
