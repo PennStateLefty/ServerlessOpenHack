@@ -101,13 +101,13 @@ namespace IceCreamRatingsService
         {
             log.LogInformation($"C# HTTP trigger function processed a request for rating v3 with id: { id }");
 
-            // Not sure how to use the binding parameters, so duplicated here
-            Uri collectionUri = UriFactory.CreateDocumentCollectionUri("IceCreamRatings", "Ratings");
-
             if (!Guid.TryParse(id, out Guid ratingId))
             {
                 return new BadRequestObjectResult("Invalid Rating ID format");
             }
+
+            // Not sure how to use the binding parameters, so duplicated here
+            Uri collectionUri = UriFactory.CreateDocumentCollectionUri("IceCreamRatings", "Ratings");
 
             // Could use async call this way and do anything the CosmosDB SDK allows for
             // This makes more sense for collections vs individual items
