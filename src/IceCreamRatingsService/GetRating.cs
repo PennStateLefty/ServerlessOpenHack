@@ -104,18 +104,16 @@ namespace IceCreamRatingsService
             // Not sure how to use the binding parameters, so duplicated here
             Uri collectionUri = UriFactory.CreateDocumentCollectionUri("IceCreamRatings", "Ratings");
 
-            bool isGuid = Guid.TryParse(id, out Guid uuid);
-            if (!isGuid)
+            if (!Guid.TryParse(id, out Guid ratingId))
             {
-                // Could do this for more validation, or just 404
-                return new BadRequestObjectResult("A rating id should be a valid UUID");
+                return new BadRequestObjectResult("Invalid Rating ID format");
             }
 
             // Could use async call this way and do anything the CosmosDB SDK allows for
             // This makes more sense for collections vs individual items
             // SingleOrDefault and FirstOrDefault threw NotSupportedExceptions from the SDK, so the handling of single items a little awkward
             IDocumentQuery<Rating> query = client.CreateDocumentQuery<Rating>(collectionUri)
-                .Where(r => r.id == uuid)
+                .Where(r => r.id == ratingId)
                 .AsDocumentQuery();
 
             IList<Rating> ratings = new List<Rating>();
