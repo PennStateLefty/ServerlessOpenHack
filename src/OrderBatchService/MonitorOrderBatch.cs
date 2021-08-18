@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace IceCreamRatingsService
+namespace OrderBatchService
 {
     public static class MonitorOrderBatch
     {
@@ -20,6 +20,17 @@ namespace IceCreamRatingsService
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "Tokyo"));
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "Seattle"));
             outputs.Add(await context.CallActivityAsync<string>("MonitorOrderBatch_Hello", "London"));
+
+            //string applicationId = context.GetInput<string>();
+
+            //var gate1 = context.WaitForExternalEvent("CityPlanningApproval");
+            //var gate2 = context.WaitForExternalEvent("FireDeptApproval");
+            //var gate3 = context.WaitForExternalEvent("BuildingDeptApproval");
+
+            //// all three departments must grant approval before a permit can be issued
+            //await Task.WhenAll(gate1, gate2, gate3);
+
+            //await context.CallActivityAsync("IssueBuildingPermit", applicationId);
 
             // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
             return outputs;
