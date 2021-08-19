@@ -64,8 +64,9 @@ namespace PosSalesProcessor
                             storeLocation = order.header.locationId,
                             receiptUrl = order.header.receiptUrl
                         };
-                        var message = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sbmessage));
-                        await sender.SendMessageAsync(new ServiceBusMessage(message));
+                        var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sbmessage)));
+                        message.ApplicationProperties.Add("totalCost", sbmessage.totalCost);
+                        await sender.SendMessageAsync(message);
 
                     }
                     
