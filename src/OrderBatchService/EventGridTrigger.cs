@@ -41,12 +41,21 @@ namespace OrderBatchService
                     string batchId = fileNameTokens[0];
                     string file = fileNameTokens[1];
 
-                    log.LogInformation($"Starting orchestration with ID = '{batchId}'.");
-                    string instanceId = await client.StartNewAsync("MonitorOrderEvents", batchId);
-                    log.LogInformation($"Started orchestration with ID = '{batchId}'.");
-
-                    log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
-                    await client.RaiseEventAsync(batchId, fileName, file);
+                    try
+                    {
+                        // The client can only start a new instance once
+                        // Use instance id when events come from an external source or when implementing singleton orchestrator
+                        // https://github.com/Azure/azure-functions-durable-extension/issues/1347
+                        // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management?tabs=csharp
+                        log.LogInformation($"Starting orchestration with ID = '{batchId}'.");
+                        string instanceId = await client.StartNewAsync("MonitorOrderEvents", batchId, batchId);
+                        log.LogInformation($"Started orchestration with ID = '{batchId}'.");
+                    }
+                    finally
+                    {
+                        log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
+                        await client.RaiseEventAsync(batchId, fileName, file);
+                    }
                 }
                 else
                 {
@@ -65,8 +74,7 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-
-            log.LogInformation("Recieved event for batch: " + batchId);
+            log.LogInformation("Received event for batch: " + batchId);
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
