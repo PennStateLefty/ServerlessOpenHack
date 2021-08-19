@@ -66,6 +66,7 @@ namespace PosSalesProcessor
                         };
                         var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sbmessage)));
                         message.ApplicationProperties.Add("totalCost", sbmessage.totalCost);
+                        message.ContentType = "application/json";
                         await sender.SendMessageAsync(message);
 
                     }
