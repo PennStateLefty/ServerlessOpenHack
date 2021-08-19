@@ -5,6 +5,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
 
@@ -18,17 +19,23 @@ namespace OrderBatchService
     {
         [FunctionName("EventGridTrigger")]
         public static async Task RunEventGridTrigger(
-            [EventGridTrigger]EventGridEvent eventGridEvent,
+            [EventGridTrigger] EventGridEvent eventGridEvent,
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
             log.LogInformation("Received Event Grid Blob Created event: " + eventGridEvent.Data.ToString());
 
-            if (eventGridEvent.Data is StorageBlobCreatedEventData)
+            try
             {
-                try
+                JObject json = JObject.Parse(eventGridEvent.Data.ToString());
+                if (json.TryGetValue("url", out JToken urlToken))
                 {
-                    string url = ((StorageBlobCreatedEventData)eventGridEvent.Data).Url;
+                    string url = urlToken.ToString();
+                    log.LogInformation($"New file created at url = '{url}'.");
+
+                    // Use the file name as the batchId and gate for processing
+                    // The prefix is the batchId
+                    // The files are the gates
                     string fileName = url.Substring(url.LastIndexOf("/") + 1);
                     string[] fileNameTokens = fileName.Split("-");
                     string batchId = fileNameTokens[0];
@@ -41,14 +48,14 @@ namespace OrderBatchService
                     log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
                     await client.RaiseEventAsync(batchId, fileName, file);
                 }
-                catch (Exception ex)
+                else
                 {
-                    log.LogError(ex, "Error parsing event grid event");
+                    log.LogWarning("No url found in the event grid payload");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                log.LogWarning("Ignoring event type: " + eventGridEvent.EventType.ToString());
+                log.LogError(ex, "Error parsing event grid event");
             }
         }
 
@@ -58,14 +65,14 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-            
+
             log.LogInformation("Recieved event for batch: " + batchId);
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
             var gate3 = context.WaitForExternalEvent("ProductInformation.csv");
 
-            // all three departments must grant approval before a permit can be issued
+            // All three files must be created before the batch can be processed
             await Task.WhenAll(gate1, gate2, gate3);
 
             log.LogInformation("Recieved all files for batch: " + batchId);
