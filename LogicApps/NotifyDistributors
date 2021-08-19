@@ -1,0 +1,120 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Contacts": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['commondataservice']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('https://msftopenhack.crm.dynamics.com'))}/tables/@{encodeURIComponent(encodeURIComponent('contacts'))}/items"
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            },
+            "Create_HTML_table": {
+                "inputs": {
+                    "format": "HTML",
+                    "from": "@body('GetProducts')"
+                },
+                "runAfter": {
+                    "GetProducts": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Table"
+            },
+            "EmailBody": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "emailbody",
+                            "type": "string",
+                            "value": "<!DOCTYPE html>\n<html>\n<body style=\"background-color: whitesmoke; color: #454545; font-family:'Gill Sans',\n'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; padding-bottom: 3em;\">\n <table style=\"width:100%; color:#454545\">\n   <tr>\n     <td style=\"width:11em;\">\n       <img style=\"margin-left:1em;\"\n       src=\"https://serverlessoh.azureedge.net/public/ice-cream-2202561_320-circle.jpg\"\n         height=\"160\" width=\"160\" alt=\"Fruit Ice Cream\">\n     </td>\n     <td>\n       <p style=\"font-style: italic; font-size: 50px;\n       font-weight:600; margin-left: 1em;\">Best For You Organics</p>\n     </td>\n   </tr>\n </table>\n <p style=\"text-align: center; font-style: italic; font-size:\n 80px;\">New Ice Cream Line!</p>\n <p style=\"margin:2em 0em; font-size: 20px; text-align: center;\">\n Best For You Organics have a new line of fruit flavored ice creams.\n Below is the information so you can start the ordering process:\n </p>\n <table style=\"width:100%; border-top: 1px solid #454545;\n border-bottom: 1px solid #454545; color:#454545; padding: 1em; font-size: 20px;\">\n   <thead>\n     <tr>\n       <th style=\"padding-bottom: 1em;\" align=\"left\">Ice Cream</th>\n       <th style=\"padding-bottom: 1em;\" align=\"left\">Description</th>\n       <th style=\"padding-bottom: 1em;\" align=\"left\">Product ID</th>\n     </tr>\n   </thead>\n   <tbody style=\"font-size: 16px;\">\n@{body('Create_HTML_table')}\n   </tbody>\n </table>\n <p style=\"text-align: center; margin-top: 3em;font-size: 20px;\">Please contact\n your representative at Best For You Organics to get more information..</p>\n</body>\n</html>"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Create_HTML_table": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "For_each_2": {
+                "actions": {
+                    "Send_an_email_(V2)": {
+                        "inputs": {
+                            "body": {
+                                "Body": "@{variables('emailbody')}",
+                                "Subject": "OpenHackTeam1 - New Ice Cream Line",
+                                "To": "@items('For_each_2')?['emailaddress1']"
+                            },
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['office365']['connectionId']"
+                                }
+                            },
+                            "method": "post",
+                            "path": "/v2/Mail"
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    }
+                },
+                "foreach": "@body('Contacts')?['value']",
+                "runAfter": {
+                    "Contacts": [
+                        "Succeeded"
+                    ],
+                    "EmailBody": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "GetProducts": {
+                "inputs": {
+                    "method": "GET",
+                    "uri": "https://serverlessohapi.azurewebsites.net/api/GetProducts"
+                },
+                "runAfter": {},
+                "type": "Http"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "manual": {
+                "inputs": {},
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "commondataservice": {
+                    "connectionId": "{ConnectionID}",
+                    "connectionName": "commondataservice",
+                    "id": "{UniqueConnectionId}"
+                },
+                "office365": {
+                    "connectionId": "/subscriptions/bbe066c7-8c25-43c6-99e4-bef432a44e7d/resourceGroups/OpenHackRG/providers/Microsoft.Web/connections/office365",
+                    "connectionName": "office365",
+                    "id": "{UniqueConnectionId}
+                }
+            }
+        }
+    }
+}
