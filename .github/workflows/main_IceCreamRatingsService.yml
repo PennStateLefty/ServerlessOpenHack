@@ -66,3 +66,5 @@ jobs:
         app-name: 'pos-sales-processor'
         package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
         publish-profile: ${{ secrets.POS_SALES_PROFILE }}
+        scm-do-build-during-deployment: false
+        enable-oryx-build: false
