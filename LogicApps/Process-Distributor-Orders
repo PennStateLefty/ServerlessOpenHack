@@ -1,0 +1,461 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "CombineOrder": {
+                "inputs": {
+                    "body": {
+                        "orderHeaderDetailsCSVUrl": "@{body('OrderHeaderDetailsSAS')?['WebUrl']}",
+                        "orderLineItemsCSVUrl": "@{body('OrderLineItemsSAS')?['WebUrl']}",
+                        "productInformationCSVUrl": "@{body('ProductInformationSAS')?['WebUrl']}"
+                    },
+                    "method": "POST",
+                    "uri": "https://serverlessohmanagementapi.trafficmanager.net/api/order/combineOrderContent"
+                },
+                "runAfter": {
+                    "OrderHeaderDetailsSAS": [
+                        "Succeeded"
+                    ],
+                    "OrderLineItemsSAS": [
+                        "Succeeded"
+                    ],
+                    "ProductInformationSAS": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Get_Customer_Number": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "Customer",
+                            "type": "string",
+                            "value": "@{substring(triggerBody()?['subject'],add(lastIndexOf(triggerBody()?['subject'],'/'),1),14)}"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "OrderHeaderDetailsControlFlag": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "FoundOrderHeader",
+                            "type": "boolean",
+                            "value": false
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_Customer_Number": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "OrderHeaderDetailsSAS": {
+                "inputs": {
+                    "body": {
+                        "Permissions": "Read"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent('ohteam1hackerfive')}/CreateSharedLinkByPath",
+                    "queries": {
+                        "path": "/incoming/@{variables('Customer')}-OrderHeaderDetails.csv"
+                    }
+                },
+                "runAfter": {
+                    "WaitForOrderHeaderDetails": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "OrderLineItemsControlFlag": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "FoundOrderLineItems",
+                            "type": "boolean",
+                            "value": false
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_Customer_Number": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "OrderLineItemsSAS": {
+                "inputs": {
+                    "body": {
+                        "Permissions": "Read"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent('ohteam1hackerfive')}/CreateSharedLinkByPath",
+                    "queries": {
+                        "path": "/incoming/@{variables('Customer')}-OrderLineItems.csv"
+                    }
+                },
+                "runAfter": {
+                    "WaitForOrderLineItems": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "ParseOrders": {
+                "inputs": {
+                    "content": "@body('CombineOrder')",
+                    "schema": {
+                        "items": {
+                            "properties": {
+                                "details": {
+                                    "items": {
+                                        "properties": {
+                                            "productDescription": {
+                                                "type": "string"
+                                            },
+                                            "productId": {
+                                                "type": "string"
+                                            },
+                                            "productName": {
+                                                "type": "string"
+                                            },
+                                            "quantity": {
+                                                "type": "string"
+                                            },
+                                            "totalCost": {
+                                                "type": "string"
+                                            },
+                                            "totalTax": {
+                                                "type": "string"
+                                            },
+                                            "unitCost": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "productId",
+                                            "quantity",
+                                            "unitCost",
+                                            "totalCost",
+                                            "totalTax",
+                                            "productName",
+                                            "productDescription"
+                                        ],
+                                        "type": "object"
+                                    },
+                                    "type": "array"
+                                },
+                                "headers": {
+                                    "properties": {
+                                        "dateTime": {
+                                            "type": "string"
+                                        },
+                                        "locationAddress": {
+                                            "type": "string"
+                                        },
+                                        "locationId": {
+                                            "type": "string"
+                                        },
+                                        "locationName": {
+                                            "type": "string"
+                                        },
+                                        "locationPostcode": {
+                                            "type": "string"
+                                        },
+                                        "salesNumber": {
+                                            "type": "string"
+                                        },
+                                        "totalCost": {
+                                            "type": "string"
+                                        },
+                                        "totalTax": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "id": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "headers",
+                                "details"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    }
+                },
+                "runAfter": {
+                    "CombineOrder": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "ProductInformationControlFlag": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "FoundProductInformation",
+                            "type": "boolean",
+                            "value": false
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Get_Customer_Number": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "ProductInformationSAS": {
+                "inputs": {
+                    "body": {
+                        "Permissions": "Read"
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent('ohteam1hackerfive')}/CreateSharedLinkByPath",
+                    "queries": {
+                        "path": "/incoming/@{variables('Customer')}-ProductInformation.csv"
+                    }
+                },
+                "runAfter": {
+                    "WaitForProductInformation": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "StoreOrders": {
+                "inputs": {
+                    "body": "@body('ParseOrders')",
+                    "method": "POST",
+                    "uri": "https://create-distributor-order.azurewebsites.net/api/CreateDistributorOrder"
+                },
+                "runAfter": {
+                    "ParseOrders": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "WaitForOrderHeaderDetails": {
+                "actions": {
+                    "Get_Order_Header_Details": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('ohteam1hackerfive'))}/files/@{encodeURIComponent(encodeURIComponent('/incoming/',variables('Customer'),'-OrderHeaderDetails.csv'))}",
+                            "retryPolicy": {
+                                "count": 5,
+                                "interval": "PT5S",
+                                "type": "exponential"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    },
+                    "Set_variable_2": {
+                        "inputs": {
+                            "name": "FoundOrderHeader",
+                            "value": true
+                        },
+                        "runAfter": {
+                            "Get_Order_Header_Details": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "expression": "@equals(variables('FoundOrderHeader'), true)",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT5M"
+                },
+                "runAfter": {
+                    "OrderHeaderDetailsControlFlag": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            },
+            "WaitForOrderLineItems": {
+                "actions": {
+                    "Get_Order_Line_Items": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('ohteam1hackerfive'))}/files/@{encodeURIComponent(encodeURIComponent('/incoming/',variables('Customer'),'-OrderLineItems.csv'))}",
+                            "retryPolicy": {
+                                "count": 5,
+                                "interval": "PT5S",
+                                "type": "exponential"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    },
+                    "Set_variable_3": {
+                        "inputs": {
+                            "name": "FoundOrderLineItems",
+                            "value": true
+                        },
+                        "runAfter": {
+                            "Get_Order_Line_Items": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "expression": "@equals(variables('FoundOrderLineItems'), true)",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT5M"
+                },
+                "runAfter": {
+                    "OrderLineItemsControlFlag": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            },
+            "WaitForProductInformation": {
+                "actions": {
+                    "Get_Product_Information": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['azureblob']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('ohteam1hackerfive'))}/files/@{encodeURIComponent(encodeURIComponent('/incoming/',variables('Customer'),'-ProductInformation.csv'))}",
+                            "retryPolicy": {
+                                "count": 5,
+                                "interval": "PT5S",
+                                "type": "exponential"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    },
+                    "Set_variable": {
+                        "inputs": {
+                            "name": "FoundProductInformation",
+                            "value": true
+                        },
+                        "runAfter": {
+                            "Get_Product_Information": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "SetVariable"
+                    }
+                },
+                "expression": "@equals(variables('FoundProductInformation'), true)",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT5M"
+                },
+                "runAfter": {
+                    "ProductInformationControlFlag": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "When_a_resource_event_occurs": {
+                "inputs": {
+                    "body": {
+                        "properties": {
+                            "destination": {
+                                "endpointType": "webhook",
+                                "properties": {
+                                    "endpointUrl": "@{listCallbackUrl()}"
+                                }
+                            },
+                            "filter": {
+                                "includedEventTypes": [
+                                    "Microsoft.Storage.BlobCreated"
+                                ]
+                            },
+                            "topic": "/subscriptions/{SubscriptionID}/resourceGroups/ohsteam1hackerfive/providers/Microsoft.Storage/storageAccounts/ohteam1hackerfive"
+                        }
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureeventgrid']['connectionId']"
+                        }
+                    },
+                    "path": "/subscriptions/@{encodeURIComponent(SubscriptionID)}/providers/@{encodeURIComponent('Microsoft.Storage.StorageAccounts')}/resource/eventSubscriptions",
+                    "queries": {
+                        "x-ms-api-version": "2017-06-15-preview"
+                    }
+                },
+                "splitOn": "@triggerBody()",
+                "type": "ApiConnectionWebhook"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azureblob": {
+                    "connectionId": "{ConnectionID}",
+                    "connectionName": "azureblob",
+                    "id": "{SubscriptionID}"
+                },
+                "azureeventgrid": {
+                    "connectionId": "{ConnectionID}",
+                    "connectionName": "azureeventgrid",
+                    "id": "{SubscriptionID}"
+                }
+            }
+        }
+    }
+}
