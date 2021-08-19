@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using PosSalesProcessor.Models;
 
 namespace PosSalesProcessor
 {
@@ -21,6 +23,21 @@ namespace PosSalesProcessor
                 ConnectionStringSetting = "CosmosDBConnection")]IAsyncCollector<Order> orders,
             ILogger log)
         {
+
+            string topicName = "receipts";
+
+            // the client that owns the connection and can be used to create senders and receivers
+            ServiceBusClient client;
+
+            // the sender used to publish messages to the topic
+            ServiceBusSender sender;
+
+            client = new ServiceBusClient(Environment.GetEnvironmentVariable("SBconnectionString"));
+            
+            sender = client.CreateSender(topicName);
+
+
+
             var exceptions = new List<Exception>();
 
             log.LogInformation($"Received {events.Length} sales events");
@@ -35,7 +52,27 @@ namespace PosSalesProcessor
 
                     await orders.AddAsync(order);
 
+                    if (!string.IsNullOrEmpty(order.header.receiptUrl))
+                    {
+
+                        var sbmessage = new ReceiptData()
+                        {
+                            totalItems = order.details.Length,
+                            totalCost = order.header.totalCost,
+                            salesNumber = order.header.salesNumber,
+                            salesDate = order.header.dateTime,
+                            storeLocation = order.header.locationId,
+                            receiptUrl = order.header.receiptUrl
+                        };
+                        var message = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(sbmessage));
+                        await sender.SendMessageAsync(new ServiceBusMessage(message));
+
+                    }
+                    
                     await Task.Yield();
+
+
+
                 }
                 catch (Exception e)
                 {
@@ -53,5 +90,8 @@ namespace PosSalesProcessor
             if (exceptions.Count == 1)
                 throw exceptions.Single();
         }
+
+
+
     }
 }
