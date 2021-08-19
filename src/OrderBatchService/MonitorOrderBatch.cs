@@ -15,7 +15,7 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-            log.LogInformation("Received event for batch: " + batchId);
+            log.LogInformation($"Received event for batchId={batchId}");
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
@@ -24,7 +24,7 @@ namespace OrderBatchService
             // All three files must be created before the batch can be processed
             await Task.WhenAll(gate1, gate2, gate3);
 
-            log.LogInformation("Recieved all files for batch: " + batchId);
+            log.LogInformation($"Received all files for batchId={batchId}");
             await context.CallActivityAsync("ProcessBatch", batchId);
         }
 
@@ -33,7 +33,7 @@ namespace OrderBatchService
             [ActivityTrigger] string batchId,
             ILogger log)
         {
-            log.LogInformation($"Processing batchId: {batchId}.");
+            log.LogInformation($"Processing batchId={batchId}");
         }
 
         [FunctionName("HttpMonitorOrderBatchStart")]
@@ -57,11 +57,12 @@ namespace OrderBatchService
             || existingInstance.RuntimeStatus == OrchestrationRuntimeStatus.Terminated)
             {
                 // An instance with the specified ID doesn't exist or an existing one stopped running, create one.
+                log.LogInformation($"Starting orchestration with instance id={batchId}");
                 await starter.StartNewAsync("HttpMonitorOrderBatch", batchId, batchId);
-                log.LogInformation($"Started orchestration with ID = '{batchId}'.");
+                log.LogInformation($"Started orchestration with instance id={batchId}");
             }
 
-            log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + filename + ", file=" + file);
+            log.LogInformation($"Raising Orchestration Event with batchId={batchId}, file={file}");
             await starter.RaiseEventAsync(batchId, file, batchId);
 
             // Return status response

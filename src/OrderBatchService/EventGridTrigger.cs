@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 namespace OrderBatchService
 {
     /// <summary>
-    /// !JPH - TODO: Not really sure how to test this, so deploying and monitoring logs
     /// Represents an event grid trigger that subscribes to Blob Created events
     /// </summary>
     public static class EventGridTrigger
@@ -31,7 +30,7 @@ namespace OrderBatchService
                 if (json.TryGetValue("url", out JToken urlToken))
                 {
                     string url = urlToken.ToString();
-                    log.LogInformation($"New file created at url = '{url}'.");
+                    log.LogInformation($"New file created at url={url}");
 
                     // Use the file name as the batchId and gate for processing
                     // The prefix is the batchId
@@ -53,12 +52,12 @@ namespace OrderBatchService
                         // https://github.com/Azure/azure-functions-durable-extension/issues/1347
                         // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-singletons?tabs=csharp
                         // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management?tabs=csharp
-                        log.LogInformation($"Starting orchestration with ID = '{batchId}'.");
+                        log.LogInformation($"Starting orchestration with instance id={batchId}");
                         string instanceId = await client.StartNewAsync("MonitorOrderEvents", batchId, batchId);
-                        log.LogInformation($"Started orchestration with ID = '{batchId}'.");
+                        log.LogInformation($"Started orchestration with instance id={batchId}");
                     }
 
-                    log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
+                    log.LogInformation($"Raising Orchestration Event with batchId={batchId}, file={file}");
                     await client.RaiseEventAsync(batchId, file, batchId);
                 }
                 else
@@ -78,7 +77,7 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-            log.LogInformation("Received event for batch with batchId=" + batchId);
+            log.LogInformation($"Received event for batchId={batchId}");
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
@@ -87,7 +86,7 @@ namespace OrderBatchService
             // All three files must be created before the batch can be processed
             await Task.WhenAll(gate1, gate2, gate3);
 
-            log.LogInformation("Recieved all files for batch: " + batchId);
+            log.LogInformation($"Received all files for batchId={batchId}");
             await context.CallActivityAsync("ProcessBatch", batchId);
         }
 
@@ -98,7 +97,7 @@ namespace OrderBatchService
         {
             // TOOD: Call the API
             // https://petstore.swagger.io/?url=https://serverlessohmanagementapi.trafficmanager.net/api/definition#/Register%20Storage%20Account/combineOrderContent
-            log.LogInformation($"Processing batchId: {batchId}.");
+            log.LogInformation($"Processing batchId={batchId}.");
         }
     }
 }
