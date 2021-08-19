@@ -9,8 +9,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
 
-using OrderBatchService.Models;
-
 namespace OrderBatchService
 {
     /// <summary>
@@ -61,7 +59,7 @@ namespace OrderBatchService
                     }
 
                     log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
-                    await client.RaiseEventAsync(batchId, file, new OrderBatchDetails { BatchId = batchId, File = file, FileName = fileName });
+                    await client.RaiseEventAsync(batchId, file, batchId);
                 }
                 else
                 {
@@ -79,8 +77,8 @@ namespace OrderBatchService
             [OrchestrationTrigger] IDurableOrchestrationContext context,
             ILogger log)
         {
-            OrderBatchDetails batchDetails = context.GetInput<OrderBatchDetails>();
-            log.LogInformation("Received event for batch with batchId=" + batchDetails.BatchId + ", file=" + batchDetails.File);
+            string batchId = context.GetInput<string>();
+            log.LogInformation("Received event for batch with batchId=" + batchId);
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
@@ -89,8 +87,8 @@ namespace OrderBatchService
             // All three files must be created before the batch can be processed
             await Task.WhenAll(gate1, gate2, gate3);
 
-            log.LogInformation("Recieved all files for batch: " + batchDetails.BatchId);
-            await context.CallActivityAsync("ProcessBatch", batchDetails.BatchId);
+            log.LogInformation("Recieved all files for batch: " + batchId);
+            await context.CallActivityAsync("ProcessBatch", batchId);
         }
 
         [FunctionName("ProcessBatch")]
