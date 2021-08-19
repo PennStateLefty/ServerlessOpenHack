@@ -41,21 +41,25 @@ namespace OrderBatchService
                     string batchId = fileNameTokens[0];
                     string file = fileNameTokens[1];
 
-                    try
+                    // Check if an instance with the specified ID already exists or an existing one stopped running(completed/failed/terminated).
+                    var existingInstance = await client.GetStatusAsync(batchId);
+                    if (existingInstance == null
+                    || existingInstance.RuntimeStatus == OrchestrationRuntimeStatus.Completed
+                    || existingInstance.RuntimeStatus == OrchestrationRuntimeStatus.Failed
+                    || existingInstance.RuntimeStatus == OrchestrationRuntimeStatus.Terminated)
                     {
                         // The client can only start a new instance once
                         // Use instance id when events come from an external source or when implementing singleton orchestrator
                         // https://github.com/Azure/azure-functions-durable-extension/issues/1347
+                        // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-singletons?tabs=csharp
                         // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management?tabs=csharp
                         log.LogInformation($"Starting orchestration with ID = '{batchId}'.");
                         string instanceId = await client.StartNewAsync("MonitorOrderEvents", batchId, batchId);
                         log.LogInformation($"Started orchestration with ID = '{batchId}'.");
                     }
-                    finally
-                    {
-                        log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
-                        await client.RaiseEventAsync(batchId, fileName, file);
-                    }
+
+                    log.LogInformation("Raising Orchestration Event with batchId=" + batchId + ", fileName=" + fileName + ", file=" + file);
+                    await client.RaiseEventAsync(batchId, fileName, file);
                 }
                 else
                 {
