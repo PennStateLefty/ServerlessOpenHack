@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -35,10 +36,9 @@ namespace OrderBatchService
                     // An instance with the specified ID doesn't exist or an existing one stopped running, create one.
                     log.LogInformation($"Starting orchestration with instance id={batchId}");
                     await starter.StartNewAsync("HttpMonitorOrderBatch", batchId, batchId);
-                    log.LogInformation($"Started orchestration with instance id={batchId}");
                 }
 
-                log.LogInformation($"Raising Orchestration Event with batchId={batchId}, file={file}");
+                log.LogInformation($"Raising orchestration event with batchId={batchId}, file={file}");
                 await starter.RaiseEventAsync(batchId, file, batchId);
 
                 // Return status response
@@ -47,7 +47,7 @@ namespace OrderBatchService
             catch (Exception ex)
             {
                 log.LogError(ex, "Error processing http event");
-                return new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest);
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
             }
         }
 
@@ -57,6 +57,7 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
+            log.LogInformation($"Monitor called for batchId={batchId}");
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
