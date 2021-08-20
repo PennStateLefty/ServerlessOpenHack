@@ -67,7 +67,7 @@ namespace OrderBatchService
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error parsing event grid event");
+                log.LogError(ex, "Error processing event grid event");
             }
         }
 
@@ -77,7 +77,6 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-            log.LogInformation($"Received event for batchId={batchId}");
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
@@ -97,7 +96,7 @@ namespace OrderBatchService
         {
             // TOOD: Call the API
             // https://petstore.swagger.io/?url=https://serverlessohmanagementapi.trafficmanager.net/api/definition#/Register%20Storage%20Account/combineOrderContent
-            log.LogInformation($"Processing batchId={batchId}.");
+            log.LogInformation($"Processing batchId={batchId}");
         }
     }
 }
