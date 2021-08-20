@@ -23,7 +23,7 @@ namespace OrderBatchService
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            log.LogInformation("Received event grid blob created event: " + eventGridEvent.Data.ToString());
+            log.LogInformation($"Received event grid blob created event: {Environment.NewLine}{eventGridEvent.Data.ToString()}");
 
             try
             {
