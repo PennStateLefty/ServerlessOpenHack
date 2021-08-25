@@ -1,5 +1,6 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
+// https://docs.microsoft.com/en-us/azure/azure-functions/functions-debug-event-grid-trigger-local
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
@@ -22,7 +23,7 @@ namespace OrderBatchService
             [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            log.LogInformation("Received Event Grid Blob Created event: " + eventGridEvent.Data.ToString());
+            log.LogInformation($"Received event grid blob created event: {Environment.NewLine}{eventGridEvent.Data.ToString()}");
 
             try
             {
@@ -54,10 +55,9 @@ namespace OrderBatchService
                         // https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-instance-management?tabs=csharp
                         log.LogInformation($"Starting orchestration with instance id={batchId}");
                         string instanceId = await client.StartNewAsync("MonitorOrderEvents", batchId, batchId);
-                        log.LogInformation($"Started orchestration with instance id={batchId}");
                     }
 
-                    log.LogInformation($"Raising Orchestration Event with batchId={batchId}, file={file}");
+                    log.LogInformation($"Raising orchestration event with batchId={batchId}, file={file}");
                     await client.RaiseEventAsync(batchId, file, batchId);
                 }
                 else
@@ -67,7 +67,7 @@ namespace OrderBatchService
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error parsing event grid event");
+                log.LogError(ex, "Error processing event grid event");
             }
         }
 
@@ -77,7 +77,7 @@ namespace OrderBatchService
             ILogger log)
         {
             string batchId = context.GetInput<string>();
-            log.LogInformation($"Received event for batchId={batchId}");
+            log.LogInformation($"Monitor called for batchId={batchId}");
 
             var gate1 = context.WaitForExternalEvent("OrderHeaderDetails.csv");
             var gate2 = context.WaitForExternalEvent("OrderLineItems.csv");
@@ -97,7 +97,8 @@ namespace OrderBatchService
         {
             // TOOD: Call the API
             // https://petstore.swagger.io/?url=https://serverlessohmanagementapi.trafficmanager.net/api/definition#/Register%20Storage%20Account/combineOrderContent
-            log.LogInformation($"Processing batchId={batchId}.");
+            log.LogInformation($"Processing batchId={batchId}");
+            
         }
     }
 }
